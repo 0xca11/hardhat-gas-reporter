@@ -1,38 +1,32 @@
-import fs from "fs"
-import path from "path"
-import sha1 from "sha1"
 import arrayUniq from "array-uniq";
+import fs from "fs";
 import { TASK_TEST_RUN_MOCHA_TESTS } from "hardhat/builtin-tasks/task-names";
-import { task, subtask } from "hardhat/config";
-import { HARDHAT_NETWORK_NAME } from "hardhat/plugins";
+import { subtask, task } from "hardhat/config";
+import { BackwardsCompatibilityProviderAdapter } from "hardhat/internal/core/providers/backwards-compatibility";
 import { globSync } from "hardhat/internal/util/glob";
+import { HARDHAT_NETWORK_NAME } from "hardhat/plugins";
 import {
-  BackwardsCompatibilityProviderAdapter
-} from "hardhat/internal/core/providers/backwards-compatibility"
-
-import {
-  EGRDataCollectionProvider,
-  EGRAsyncApiProvider
-} from "./providers";
-
-import {
-  HardhatArguments,
-  HttpNetworkConfig,
-  NetworkConfig,
-  EthereumProvider,
+  Artifacts,
   HardhatRuntimeEnvironment,
-  Artifact,
-  Artifacts
+  HttpNetworkConfig,
 } from "hardhat/types";
-
-import "./type-extensions"
-import { EthGasReporterConfig, EthGasReporterOutput, RemoteContract } from "./types";
-import { TASK_GAS_REPORTER_MERGE, TASK_GAS_REPORTER_MERGE_REPORTS } from "./task-names";
+import path from "path";
+import sha1 from "sha1";
 import { mergeReports } from "./merge-reports";
-const { parseSoliditySources } = require('eth-gas-reporter/lib/utils');
+import { EGRAsyncApiProvider, EGRDataCollectionProvider } from "./providers";
+import {
+  TASK_GAS_REPORTER_MERGE,
+  TASK_GAS_REPORTER_MERGE_REPORTS,
+} from "./task-names";
+import "./type-extensions";
+import { EthGasReporterConfig, RemoteContract } from "./types";
+
+const {
+  parseSoliditySources,
+} = require("@rolla-finance/eth-gas-reporter/lib/utils");
 
 let mochaConfig;
-let resolvedQualifiedNames: string[]
+let resolvedQualifiedNames: string[];
 let resolvedRemoteContracts: RemoteContract[] = [];
 
 /**
@@ -41,8 +35,11 @@ let resolvedRemoteContracts: RemoteContract[] = [];
  * @param  {string[]} skippable      excludeContracts option values
  * @return {boolean}
  */
-function shouldSkipContract(qualifiedName: string, skippable: string[]): boolean {
-  for (const item of skippable){
+function shouldSkipContract(
+  qualifiedName: string,
+  skippable: string[]
+): boolean {
+  for (const item of skippable) {
     if (qualifiedName.includes(item)) return true;
   }
   return false;
@@ -55,16 +52,16 @@ function shouldSkipContract(qualifiedName: string, skippable: string[]): boolean
  * @param  {String[]}                  skippable    contract *not* to track
  * @return {object[]}                  objects w/ abi and bytecode
  */
-function getContracts(artifacts: Artifacts, skippable: string[] = []) : any[] {
+function getContracts(artifacts: Artifacts, skippable: string[] = []): any[] {
   const contracts = [];
 
   for (const qualifiedName of resolvedQualifiedNames) {
-    if (shouldSkipContract(qualifiedName, skippable)){
+    if (shouldSkipContract(qualifiedName, skippable)) {
       continue;
     }
 
     let name: string;
-    let artifact = artifacts.readArtifactSync(qualifiedName)
+    let artifact = artifacts.readArtifactSync(qualifiedName);
 
     // Prefer simple names
     try {
@@ -79,21 +76,21 @@ function getContracts(artifacts: Artifacts, skippable: string[] = []) : any[] {
       artifact: {
         abi: artifact.abi,
         bytecode: artifact.bytecode,
-        deployedBytecode: artifact.deployedBytecode
-      }
+        deployedBytecode: artifact.deployedBytecode,
+      },
     });
   }
 
-  for (const remoteContract of resolvedRemoteContracts){
+  for (const remoteContract of resolvedRemoteContracts) {
     contracts.push({
       name: remoteContract.name,
       artifact: {
         abi: remoteContract.abi,
         bytecode: remoteContract.bytecode,
         bytecodeHash: remoteContract.bytecodeHash,
-        deployedBytecode: remoteContract.deployedBytecode
-      }
-    })
+        deployedBytecode: remoteContract.deployedBytecode,
+      },
+    });
   }
   return contracts;
 }
@@ -106,9 +103,11 @@ function getContracts(artifacts: Artifacts, skippable: string[] = []) : any[] {
  * @param  {HardhatRuntimeEnvironment} hre
  * @return {EthGasReporterConfig}
  */
-function getDefaultOptions(hre: HardhatRuntimeEnvironment): EthGasReporterConfig {
+function getDefaultOptions(
+  hre: HardhatRuntimeEnvironment
+): EthGasReporterConfig {
   const defaultUrl = "http://localhost:8545";
-  const defaultCompiler = hre.config.solidity.compilers[0]
+  const defaultCompiler = hre.config.solidity.compilers[0];
 
   let url: any;
   // Resolve URL
@@ -123,16 +122,16 @@ function getDefaultOptions(hre: HardhatRuntimeEnvironment): EthGasReporterConfig
     url: <string>url,
     metadata: {
       compiler: {
-        version: defaultCompiler.version
+        version: defaultCompiler.version,
       },
       settings: {
         optimizer: {
           enabled: defaultCompiler.settings.optimizer.enabled,
-          runs: defaultCompiler.settings.optimizer.runs
-        }
-      }
-    }
-  }
+          runs: defaultCompiler.settings.optimizer.runs,
+        },
+      },
+    },
+  };
 }
 
 /**
@@ -154,15 +153,17 @@ function getOptions(hre: HardhatRuntimeEnvironment): any {
 async function getResolvedRemoteContracts(
   provider: EGRAsyncApiProvider,
   remoteContracts: RemoteContract[] = []
-) : Promise <RemoteContract[]> {
-  for (const contract of remoteContracts){
+): Promise<RemoteContract[]> {
+  for (const contract of remoteContracts) {
     let code;
     try {
       contract.bytecode = await provider.getCode(contract.address);
       contract.deployedBytecode = contract.bytecode;
       contract.bytecodeHash = sha1(contract.bytecode);
-    } catch (error){
-      console.log(`Warning: failed to fetch bytecode for remote contract: ${contract.name}`)
+    } catch (error) {
+      console.log(
+        `Warning: failed to fetch bytecode for remote contract: ${contract.name}`
+      );
       console.log(`Error was: ${error}\n`);
     }
   }
@@ -177,16 +178,25 @@ async function getResolvedRemoteContracts(
 subtask(TASK_TEST_RUN_MOCHA_TESTS).setAction(
   async (args: any, hre, runSuper) => {
     const options = getOptions(hre);
-    options.getContracts = getContracts.bind(null, hre.artifacts, options.excludeContracts);
+    options.getContracts = getContracts.bind(
+      null,
+      hre.artifacts,
+      options.excludeContracts
+    );
 
     if (options.enabled) {
       mochaConfig = hre.config.mocha || {};
-      mochaConfig.reporter = "eth-gas-reporter";
+      mochaConfig.reporter = "@rolla-finance/eth-gas-reporter";
       mochaConfig.reporterOptions = options;
 
-      if (hre.network.name === HARDHAT_NETWORK_NAME || options.fast){
-        const wrappedDataProvider= new EGRDataCollectionProvider(hre.network.provider,mochaConfig);
-        hre.network.provider = new BackwardsCompatibilityProviderAdapter(wrappedDataProvider);
+      if (hre.network.name === HARDHAT_NETWORK_NAME || options.fast) {
+        const wrappedDataProvider = new EGRDataCollectionProvider(
+          hre.network.provider,
+          mochaConfig
+        );
+        hre.network.provider = new BackwardsCompatibilityProviderAdapter(
+          wrappedDataProvider
+        );
 
         const asyncProvider = new EGRAsyncApiProvider(hre.network.provider);
         resolvedRemoteContracts = await getResolvedRemoteContracts(
@@ -195,7 +205,8 @@ subtask(TASK_TEST_RUN_MOCHA_TESTS).setAction(
         );
 
         mochaConfig.reporterOptions.provider = asyncProvider;
-        mochaConfig.reporterOptions.blockLimit = (<any>hre.network.config).blockGasLimit as number;
+        mochaConfig.reporterOptions.blockLimit = (<any>hre.network.config)
+          .blockGasLimit as number;
         mochaConfig.attachments = {};
       }
 
@@ -214,9 +225,11 @@ subtask(TASK_GAS_REPORTER_MERGE_REPORTS)
     []
   )
   .setAction(async ({ inputFiles }: { inputFiles: string[] }) => {
-    const reports = inputFiles.map((input) => JSON.parse(fs.readFileSync(input, "utf-8")));
+    const reports = inputFiles.map((input) =>
+      JSON.parse(fs.readFileSync(input, "utf-8"))
+    );
     return mergeReports(reports);
-  })
+  });
 
 /**
  * Task for merging multiple gasReporterOutput.json files generated by eth-gas-reporter
@@ -231,28 +244,31 @@ task(TASK_GAS_REPORTER_MERGE)
     "gasReporterOutput.json"
   )
   .addVariadicPositionalParam(
-		"input",
-		"A list of gasReporterOutput.json files generated by eth-gas-reporter. Files can be defined using glob patterns"
-	)
+    "input",
+    "A list of gasReporterOutput.json files generated by eth-gas-reporter. Files can be defined using glob patterns"
+  )
   .setAction(async (taskArguments, { run }) => {
-		const output = path.resolve(process.cwd(), taskArguments.output);
+    const output = path.resolve(process.cwd(), taskArguments.output);
 
-		// Parse input files and calculate glob patterns
-		const inputFiles = arrayUniq<string>(taskArguments.input.map(globSync).flat())
-      .map(inputFile => path.resolve(inputFile));
+    // Parse input files and calculate glob patterns
+    const inputFiles = arrayUniq<string>(
+      taskArguments.input.map(globSync).flat()
+    ).map((inputFile) => path.resolve(inputFile));
 
-		if (inputFiles.length === 0) {
-			throw new Error(`No files found for the given input: ${taskArguments.input.join(" ")}`);
-		}
+    if (inputFiles.length === 0) {
+      throw new Error(
+        `No files found for the given input: ${taskArguments.input.join(" ")}`
+      );
+    }
 
-		console.log(`Merging ${inputFiles.length} input files:`);
-		inputFiles.forEach(inputFile => {
-			console.log("  - ", inputFile);
-		});
+    console.log(`Merging ${inputFiles.length} input files:`);
+    inputFiles.forEach((inputFile) => {
+      console.log("  - ", inputFile);
+    });
 
-		console.log("\nOutput: ", output);
+    console.log("\nOutput: ", output);
 
-		const result = await run(TASK_GAS_REPORTER_MERGE_REPORTS, { inputFiles });
+    const result = await run(TASK_GAS_REPORTER_MERGE_REPORTS, { inputFiles });
 
-		fs.writeFileSync(output, JSON.stringify(result), "utf-8");
-	});
+    fs.writeFileSync(output, JSON.stringify(result), "utf-8");
+  });

@@ -15,7 +15,8 @@ export interface EthGasReporterConfig {
   maxMethodDiff?: number;
   maxDeploymentDiff?: number;
   enabled?: boolean;
-  remoteContracts?: RemoteContract[]
+  remoteContracts?: RemoteContract[];
+  ethPrice?: string;
 
   // Hardhat internals set for eth-gas-reporter
   metadata?: any;
@@ -38,56 +39,56 @@ export interface RemoteContract {
  * More info: https://github.com/cgewecke/eth-gas-reporter/blob/master/docs/gasReporterOutput.md
  */
 export interface EthGasReporterOutput {
-  namespace: string
+  namespace: string;
 
   config: {
-    currency: string
-    gasPrice: number
-    outputFile?: string
-    rst: boolean
-    rstTitle?: string
-    showTimeSpent: boolean
-    artifactType: string
-    srcPath: string
-    blockLimit: number
-    ethPrice: string
-    excludeContracts: string[]
-    onlyCalledMethods: boolean
-    url: string
+    currency: string;
+    gasPrice: number;
+    outputFile?: string;
+    rst: boolean;
+    rstTitle?: string;
+    showTimeSpent: boolean;
+    artifactType: string;
+    srcPath: string;
+    blockLimit: number;
+    ethPrice: string;
+    excludeContracts: string[];
+    onlyCalledMethods: boolean;
+    url: string;
 
     metadata: {
       compiler: {
-        version: string
-      }
+        version: string;
+      };
 
       settings: {
-        evmVersion: string
+        evmVersion: string;
         optimizer: {
-          enabled: boolean
-          runs: number
-        }
-      }
-    }
-  }
+          enabled: boolean;
+          runs: number;
+        };
+      };
+    };
+  };
 
   info: {
-    blockLimit: number
+    blockLimit: number;
 
     methods: {
       [methodName: string]: {
-        key: string
-        contract: string
-        method: string
-        gasData: number[]
-        numberOfCalls: number
-      }
-    }
+        key: string;
+        contract: string;
+        method: string;
+        gasData: number[];
+        numberOfCalls: number;
+      };
+    };
 
     deployments: Array<{
-      name: string
-      bytecode: string
-      deployedBytecode: string
-      gasData: number[]
-    }>
-  }
+      name: string;
+      bytecode: string;
+      deployedBytecode: string;
+      gasData: number[];
+    }>;
+  };
 }
